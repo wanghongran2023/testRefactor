@@ -53,23 +53,26 @@ Launch the backend API locally. The API is the application's interface to S3 and
 ### 4. Frontend App
 Launch the frontend app locally.
 
-* To download all the package dependencies, run the command from the directory `udagram-frontend/`:
+* Before running the application, you should edit the angular.json file:
+   ```bash
+      in architect > serve > option
+      add "disableHostCheck": true
+      to allow connect form dns  
+   ```
+* To run the frontend locally, run the command from the directory `udagram-frontend/`:
     ```bash
-    npm install .
+      npm install .
+      npm install -g ionic
+      ionic build
+      ionic serve  --host 0.0.0.0 --port 8080
     ```
-* Install Ionic Framework's Command Line tools for us to build and run the application:
+* To run in the docker container, run the command from the directory `udagram-frontend/`:
     ```bash
-    npm install -g ionic
+      sudo docker build -t backend .
+      sudo docker run -p 8080:8080 backend
     ```
-* Prepare your application by compiling them into static files.
-    ```bash
-    ionic build
-    ```
-* Run the application locally using files created from the `ionic build` command.
-    ```bash
-    ionic serve
-    ```
-* You can visit `http://localhost:8100` in your web browser to verify that the application is running. You should see a web interface.
+  
+* You can visit `http://localhost:8080`, `http://<your server ip>:8080` or `http://<your server dns>:8080` in your web browser to verify that the application is running. You should see a web interface.
 
 ## Tips
 1. Take a look at `udagram-api` -- does it look like we can divide it into two modules to be deployed as separate microservices?
