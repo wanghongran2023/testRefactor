@@ -1,4 +1,4 @@
 #!/bin/bash
 
-export NODE_OPTIONS=--openssl-legacy-provider
+source ./set_env.sh
 npm run dev

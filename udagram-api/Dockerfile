@@ -15,7 +15,8 @@ RUN apt install -y nodejs npm
 RUN npm cache clean --force
 RUN npm install -f
 
-
+COPY set_env.sh /backend/set_env.sh
+RUN chmod +x /backend/set_env.sh
 COPY start.sh /backend/start.sh
 RUN chmod +x /backend/start.sh
 
