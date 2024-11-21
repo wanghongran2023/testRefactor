@@ -64,12 +64,12 @@ Launch the frontend app locally.
       npm install .
       npm install -g ionic
       ionic build
-      ionic serve  --host 0.0.0.0 --port 8080
+      ionic serve  --host 0.0.0.0 --port 8100
     ```
 * To run in the docker container, run the command from the directory `udagram-frontend/`:
     ```bash
       sudo docker build -t backend .
-      sudo docker run -p 8080:8080 backend
+      sudo docker run -p 8100:8100 backend
     ```
   
 * You can visit `http://localhost:8080`, `http://<your server ip>:8080` or `http://<your server dns>:8080` in your web browser to verify that the application is running. You should see a web interface.

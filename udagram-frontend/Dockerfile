@@ -22,6 +22,6 @@ ENV APP_HOME=/frontend
 COPY start.sh /frontend/start.sh
 RUN chmod +x /frontend/start.sh
 
-EXPOSE 8080
+EXPOSE 8100
 
 ENTRYPOINT ["/frontend/start.sh"]
