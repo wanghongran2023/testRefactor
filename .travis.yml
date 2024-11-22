@@ -7,24 +7,18 @@ jobs:
   include:
     - stage: Build and Push Images
       script:
-        - echo "Checking out code..."
-        - git clone https://github.com/wanghongran2023/testRefactor.git && cd testRefactor 
-        - echo "Configuring AWS CLI"
-        - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-        - unzip awscliv2.zip
-        - sudo ./aws/install
-        - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-        - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-        - aws configure set region $AWS_REGION
+        # Check Out Code
+        - git clone https://github.com/wanghongran2023/testRefactor.git
+        - cd testRefactor
 
-        - echo "Building Docker images"
+        # Build Docker Image
         - cd udagram-frontend && docker build -t drwkwxuexi/frontend . && cd ..
         - cd udagram-reverseproxy && docker build -t drwkwxuexi/backend-reverseproxy . && cd ..
         - cd udagram-api-feed && docker build -t drwkwxuexi/backend-feed . && cd ..
         - cd udagram-api-user && docker build -t drwkwxuexi/backend-user . && cd ..
 
-        - echo "Pushing Docker images to DockerHub"
-        - echo "$DOCKER_PASSWORD" | docker login -u drwkwxuexi --password-stdin
+        # Pushing Image to DockerHub
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
         - docker push drwkwxuexi/frontend
         - docker push drwkwxuexi/backend-reverseproxy
         - docker push drwkwxuexi/backend-feed
@@ -32,21 +26,28 @@ jobs:
 
     - stage: Deploy to EKS
       script:
-        - echo "Checking out code..."
+
+        # Check Out Code
         - git clone https://github.com/wanghongran2023/testRefactor.git && cd testRefactor
-        - echo "Installing dependencies..."
+
+        # Configure Aws Cli
+        - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        - unzip awscliv2.zip
+        - sudo ./aws/install
+        - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+        - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+        - aws configure set region $AWS_REGION
+
+        # Install kubectl
         - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
         - chmod +x kubectl
         - sudo mv kubectl /usr/local/bin/
         - kubectl version --client
-        - curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
-        - sudo mv /tmp/eksctl /usr/local/bin
-        - eksctl version
 
-        - echo "Configuring AWS and connecting to EKS..."
-        - aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER_NAME
+        # Connect to EKS
+        - aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
 
-        - echo "Deploying to EKS..."
+        # Deploying to EKS
         - cd EKSdeploy
         - kubectl apply -f configmap.yml
         - ENCODE_AWS_ACCESS_KEY_ID=$(echo -n "$AWS_ACCESS_KEY_ID" | base64 -w 0)
@@ -61,9 +62,13 @@ jobs:
         - sed -i "s|{temp_jwt_secret}|$ENCODE_JWT_SECRET|g" secret.yml
         - kubectl apply -f secret.yml
         - kubectl apply -f backend-user-deploy.yml
+        #- kubectl apply -f backend-user-service.yml
         - kubectl apply -f backend-feed-deploy.yml
+        #- kubectl apply -f backend-user-service.yml
         - kubectl apply -f backend-reverseproxy-deploy.yml
+        #- kubectl apply -f backend-service.yml
         - kubectl apply -f frontend-deploy.yml
+        #- kubectl apply -f frontend-service.yml
         - kubectl get pods
         - kubectl get svc
 
