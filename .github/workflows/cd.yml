@@ -26,7 +26,7 @@ jobs:
           docker build -t frontend .
 
       - name: Build Backend Reverse Proxy
-        working-directory: udagram-api-reverseproxy
+        working-directory: udagram-reverseproxy
         run: |                                                                                                  
            docker build -t backend-reverseproxy .
 
