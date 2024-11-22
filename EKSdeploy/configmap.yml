@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-configmap
+data:
+  AWS_DEFAULT_REGION: us-east-1
+  AWS_BUCKET: udagram-wang2024 
+  AWS_REGION: us-east-1
+  AWS_PROFILE: default
+  URL: http://localhost:80
+  POSTGRES_HOST: postgres.c9awg4xdbfsa.us-east-1.rds.amazonaws.com
+  POSTGRES_DB: postgres
