@@ -101,4 +101,14 @@ jobs:
         run: |
           kubectl apply -f backend-deploy.yml
           kubectl get pods 
+          kubectl apply -f backend-service.yml
+          kubectl get svc
+
+      - name: Deploy Frontend
+        working-directory: EKSdeploy
+        run: |
+          kubectl apply -f frontend-deploy.yml
+          kubectl get pods
+          kubectl apply -f frontend-service.yml
+          kubectl get svc
 
