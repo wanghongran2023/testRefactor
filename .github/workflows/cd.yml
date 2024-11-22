@@ -73,11 +73,11 @@ jobs:
         working-directory: EKSdeploy
         run: |
           kubectl apply -f configmap.yml
-          ENCODE_AWS_ACCESS_KEY_ID=$(echo "${{ secrets.AWS_ACCESS_KEY_ID}}" | base64 )
-          ENCODE_AWS_SECRET_ACCESS_KEY=$(echo "${{ secrets.AWS_SECRET_ACCESS_KEY}}" | base64 )
-          ENCODE_POSTGRES_USERNAME=$(echo "${{ secrets.POSTGRES_USERNAME}}" | base64 )
-          ENCODE_POSTGRES_PASSWORD=$(echo "${{ secrets.POSTGRES_PASSWORD}}" | base64 )
-          ENCODE_JWT_SECRET=$(echo "${{ secrets.JWT_SECRET}}" | base64 )
+          ENCODE_AWS_ACCESS_KEY_ID=$(echo "${{ secrets.AWS_ACCESS_KEY_ID}}" | base64 -w 0)
+          ENCODE_AWS_SECRET_ACCESS_KEY=$(echo "${{ secrets.AWS_SECRET_ACCESS_KEY}}" | base64 -w 0)
+          ENCODE_POSTGRES_USERNAME=$(echo "${{ secrets.POSTGRES_USERNAME}}" | base64 -w 0)
+          ENCODE_POSTGRES_PASSWORD=$(echo "${{ secrets.POSTGRES_PASSWORD}}" | base64 -w 0)
+          ENCODE_JWT_SECRET=$(echo "${{ secrets.JWT_SECRET}}" | base64 -w 0)
 
           sed -i "s|{temp_aws_access_key_id}|$ENCODE_AWS_ACCESS_KEY_ID|g" secret.yml
           sed -i "s|{temp_aws_secret_access_key}|$ENCODE_AWS_SECRET_ACCESS_KEY|g" secret.yml
