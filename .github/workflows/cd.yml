@@ -41,10 +41,9 @@ jobs:
           echo "export AWS_PROFILE=\"$AWS_PROFILE\"" >> set_env.sh
           echo "export JWT_SECRET=\"$JWT_SECRET\"" >> set_env.sh
           echo "export URL=\"$URL\"" >> set_env.sh
-
-          echo "[default]" >> credential
-          echo "export aws_access_key_id=\"$AWS_ACCESS_KEY_ID\"" >>credential
-          echo "export aws_secret_access_key=\"$AWS_SECRET_ACCESS_KEY\"" >> credential
+          echo "aws configure set aws_access_key_id \"$AWS_ACCESS_KEY_ID\"" >> set_env.sh
+          echo "aws configure set aws_secret_access_key \"$AWS_SECRET_ACCESS_KEY\"" >> set_env.sh
+          echo "aws configure set region \"us-east-1\"" >> set_env.sh
 
           chmod +x set_env.sh
           docker build -t backend .
