@@ -60,7 +60,7 @@ jobs:
           URL: ${{ secrets.URL }}
 
       - name: Login to ECR
-        run: aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin 367479749599.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+        run: aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin 823860120474.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
       - name: Push Frontend image
         run: |
