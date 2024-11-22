@@ -27,7 +27,7 @@ jobs:
           docker build -t frontend:${GIT_HASH} .
 
       - name: Build Backend
-        working-directory: api
+        working-directory: udagram-api
         run: |
           GIT_HASH=$(git rev-parse --short HEAD)
           docker build -t backend:${GIT_HASH} .
