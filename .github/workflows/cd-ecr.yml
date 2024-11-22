@@ -1,4 +1,4 @@
-name: Build and Deploy to EKS
+name: (ECR)Build and Deploy to EKS
 
 on:
   pull_request:
