@@ -28,38 +28,7 @@ jobs:
       - name: Build Backend
         working-directory: udagram-api
         run: |
-          echo "#!/bin/bash" > secret-script.sh
-          echo "export AWS_ACCESS_KEY_ID=\"$AWS_ACCESS_KEY_ID\"" >> set_env.sh
-          echo "export AWS_SECRET_ACCESS_KEY=\"$AWS_SECRET_ACCESS_KEY\"" >> set_env.sh
-          echo "export AWS_DEFAULT_REGION=\"$AWS_DEFAULT_REGION\"" >> set_env.sh
-          echo "export POSTGRES_USERNAME=\"$POSTGRES_USERNAME\"" >> set_env.sh
-          echo "export POSTGRES_PASSWORD=\"$POSTGRES_PASSWORD\"" >> set_env.sh
-          echo "export POSTGRES_HOST=\"$POSTGRES_HOST\"" >> set_env.sh
-          echo "export POSTGRES_DB=\"$POSTGRES_DB\"" >> set_env.sh
-          echo "export AWS_BUCKET=\"$AWS_BUCKET\"" >> set_env.sh
-          echo "export AWS_REGION=\"$AWS_REGION\"" >> set_env.sh
-          echo "export AWS_PROFILE=\"$AWS_PROFILE\"" >> set_env.sh
-          echo "export JWT_SECRET=\"$JWT_SECRET\"" >> set_env.sh
-          echo "export URL=\"$URL\"" >> set_env.sh
-          echo "aws configure set aws_access_key_id \"$AWS_ACCESS_KEY_ID\"" >> set_env.sh
-          echo "aws configure set aws_secret_access_key \"$AWS_SECRET_ACCESS_KEY\"" >> set_env.sh
-          echo "aws configure set region \"us-east-1\"" >> set_env.sh
-
-          chmod +x set_env.sh
           docker build -t backend .
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-          POSTGRES_USERNAME: ${{ secrets.POSTGRES_USERNAME }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          AWS_BUCKET: ${{ secrets.AWS_BUCKET }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          AWS_PROFILE: ${{ secrets.AWS_PROFILE }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          URL: ${{ secrets.URL }}
 
       - name: Login to ECR
         run: aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin 823860120474.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
@@ -99,6 +68,24 @@ jobs:
       - name: Connect to EKS
         run: |
           aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name mycluster
+      
+      - name: Deploy Config and Secret
+        working-directory: EKSdeploy
+        run: |
+          kubectl apply -f configmap.yml
+          ENCODE_AWS_ACCESS_KEY_ID=$(echo "${{ secrets.AWS_ACCESS_KEY_ID}}" | base64 )
+          ENCODE_AWS_SECRET_ACCESS_KEY=$(echo "${{ secrets.AWS_SECRET_ACCESS_KEY}}" | base64 )
+          ENCODE_POSTGRES_USERNAME=$(echo "${{ secrets.POSTGRES_USERNAME}}" | base64 )
+          ENCODE_POSTGRES_PASSWORD=$(echo "${{ secrets.POSTGRES_PASSWORD}}" | base64 )
+          ENCODE_JWT_SECRET=$(echo "${{ secrets.JWT_SECRET}}" | base64 )
+
+          sed -i "s|{temp_aws_access_key_id}|$ENCODE_AWS_ACCESS_KEY_ID|g" secret.yml
+          sed -i "s|{temp_aws_secret_access_key}|$ENCODE_AWS_SECRET_ACCESS_KEY|g" secret.yml
+          sed -i "s|{temp_postgres_username}|$ENCODE_POSTGRES_USERNAME|g" secret.yml
+          sed -i "s|{temp_postgres_password}|$ENCODE_POSTGRES_PASSWORD|g" secret.yml
+          sed -i "s|{temp_jwt_secret}|$ENCODE_JWT_SECRET|g" secret.yml
+
+          kubectl apply -f secret.yml
 
       - name: Deploy Backend
         working-directory: EKSdeploy
