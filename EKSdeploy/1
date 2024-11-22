@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: backend-feed
+  name: backend-reverseproxy
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      app: backend-feed
+      app: backend-reverseproxy
   template:
     metadata:
       labels:
-        app: backend-feed
+        app: backend-reverseproxy
     spec:
       containers:
       - name: ecr-container
-        image: drwkwxuexi/backend-feed:latest
+        image: drwkwxuexi/backend-reverseproxy:latest
         ports:
           - containerPort: 80
         resources:
