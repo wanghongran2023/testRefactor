@@ -101,7 +101,7 @@ jobs:
         run: |
           kubectl apply -f backend-deploy.yml
           kubectl get pods 
-          kubectl apply -f backend-service.yml
+          #kubectl apply -f backend-service.yml  # Only deploy at the first time
           kubectl get svc
 
       - name: Deploy Frontend
@@ -109,6 +109,6 @@ jobs:
         run: |
           kubectl apply -f frontend-deploy.yml
           kubectl get pods
-          kubectl apply -f frontend-service.yml
+          #kubectl apply -f frontend-service.yml   # Only deploy at the first time
           kubectl get svc
 
