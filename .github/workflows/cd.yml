@@ -37,7 +37,8 @@ jobs:
 
       - name: Build Backend User
         working-directory: udagram-api-user
-        run: |                                                                                                  docker build -t backend-user .
+        run: |                              
+          docker build -t backend-user .
 
       - name: Login to ECR
         run: aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin 823860120474.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
