@@ -15,11 +15,16 @@ RUN apt install -y nodejs npm
 RUN npm cache clean --force
 RUN npm install -f
 
-COPY set_env.sh /backend/set_env.sh
-RUN chmod +x /backend/set_env.sh
+COPY init_aws_cli.sh /backend/init_aws_cli.sh
+RUN chmod +x /backend/init_aws_cli.sh
 COPY start.sh /backend/start.sh
 RUN chmod +x /backend/start.sh
 
-EXPOSE 8080
+RUN apt-get update && apt-get install -y less vim curl unzip sudo
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+RUN unzip awscliv2.zip
+RUN sudo ./aws/install
+
+EXPOSE 80
 
 ENTRYPOINT ["/backend/start.sh"]

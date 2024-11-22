@@ -25,10 +25,19 @@ jobs:
         run: |
           docker build -t frontend .
 
-      - name: Build Backend
-        working-directory: udagram-api
+      - name: Build Backend Reverse Proxy
+        working-directory: udagram-api-reverseproxy
+        run: |                                                                                                  
+           docker build -t backend-reverseproxy .
+
+      - name: Build Backend Feed
+        working-directory: udagram-api-feed
         run: |
-          docker build -t backend .
+          docker build -t backend-feed .
+
+      - name: Build Backend User
+        working-directory: udagram-api-user
+        run: |                                                                                                  docker build -t backend-user .
 
       - name: Login to ECR
         run: aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin 823860120474.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
@@ -38,10 +47,20 @@ jobs:
           docker tag frontend 823860120474.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO_FRONT }}:latest
           docker push 823860120474.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO_FRONT }}:latest
 
-      - name: Push Backend image
+      - name: Push Backend Feed image
         run: |
-          docker tag backend 823860120474.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO_BACK }}:latest
-          docker push 823860120474.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO_BACK }}:latest
+          docker tag backend-feed 823860120474.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend-feed:latest
+          docker push 823860120474.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend-feed:latest
+
+      - name: Push Backend User image
+        run: |
+          docker tag backend-user 823860120474.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend-user:latest
+          docker push 823860120474.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend-user:latest
+
+      - name: Push Backend Reverse Proxy
+        run: |
+          docker tag backend-reverseproxy 823860120474.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend-reverseproxy:latest
+          docker push 823860120474.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend-reverseproxy:latest
 
   Deploy:
     name: Deploy ECR image to EKS
@@ -87,13 +106,25 @@ jobs:
 
           kubectl apply -f secret.yml
 
-      - name: Deploy Backend
+      - name: Deploy Backend User
         working-directory: EKSdeploy
         run: |
-          kubectl apply -f backend-deploy.yml
+          kubectl apply -f backend-user-deploy.yml
           kubectl get pods 
           #kubectl apply -f backend-service.yml  # Only deploy at the first time
-          kubectl get svc
+      
+      - name: Deploy Backend Feed
+        working-directory: EKSdeploy
+        run: |
+          kubectl apply -f backend-feed-deploy.yml
+          kubectl get pods
+
+      - name: Deploy Backend Reverse Proxy
+        working-directory: EKSdeploy
+        run: |
+          kubectl apply -f backend-reverseproxy-deploy.yml
+          kubectl get pods
+          #kubectl apply -f backend-service.yml  # Only deploy at the first time
 
       - name: Deploy Frontend
         working-directory: EKSdeploy

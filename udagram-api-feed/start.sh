@@ -1,4 +1,4 @@
 #!/bin/bash
 
-source ./set_env.sh
+sh init_aws_cli.sh
 npm run dev
