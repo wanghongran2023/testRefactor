@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: frontend
 spec:
-  replicas: 2 
+  replicas: 1 
   selector:
     matchLabels:
       app: frontend
@@ -17,10 +17,3 @@ spec:
         image: drwkwxuexi/frontend:latest
         ports:
           - containerPort: 8080
-        resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "200m"
-            memory: "256Mi"
