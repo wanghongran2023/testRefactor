@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: ecr-container
-        image: 823860120474.dkr.ecr.us-east-1.amazonaws.com/backend:latest
+        image: 823860120474.dkr.ecr.us-east-1.amazonaws.com/backend-reverseproxy:latest
         ports:
           - containerPort: 80
         env:

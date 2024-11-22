@@ -8,6 +8,7 @@ on:
 jobs:
   Build:
     name: Build Frontend and Backend and Upload to ECR
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Code Checkout

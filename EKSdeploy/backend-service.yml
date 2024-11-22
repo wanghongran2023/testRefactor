@@ -6,7 +6,7 @@ metadata:
     app: backend-service
 spec:
   selector:
-    app: backend
+    app: backend-reverseproxy
   ports:
     - protocol: TCP
       port: 80
