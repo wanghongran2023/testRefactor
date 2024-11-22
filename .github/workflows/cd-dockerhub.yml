@@ -1,0 +1,127 @@
+name: Build and Deploy to EKS
+
+on:
+  pull_request:
+    branches: ["master"]
+  workflow_dispatch:
+
+jobs:
+  Build:
+    name: Build Frontend and Backend and Upload to ECR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to DockerHub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build Frontend
+        working-directory: udagram-frontend
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/frontend .
+
+      - name: Build Backend Reverse Proxy
+        working-directory: udagram-reverseproxy
+        run: |                                                                                                  
+           docker build -t ${{ secrets.DOCKER_USERNAME }}/backend-reverseproxy .
+
+      - name: Build Backend Feed
+        working-directory: udagram-api-feed
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/backend-feed .
+
+      - name: Build Backend User
+        working-directory: udagram-api-user
+        run: |                              
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/backend-user .
+
+      - name: Push Frontend image
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/frontend
+
+      - name: Push Backend Feed image
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/backend-feed
+
+      - name: Push Backend User image
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/backend-user
+
+      - name: Push Backend Reverse Proxy
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/backend-reverseproxy
+
+  Deploy:
+    name: Deploy ECR image to EKS
+    runs-on: ubuntu-latest
+    needs: Build
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install Kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl version --client
+
+      - name: Connect to EKS
+        run: |
+          aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name mycluster
+      
+      - name: Deploy Config and Secret
+        working-directory: EKSdeploy
+        run: |
+          kubectl apply -f configmap.yml
+          ENCODE_AWS_ACCESS_KEY_ID=$(echo -n "${{ secrets.AWS_ACCESS_KEY_ID}}" | base64 -w 0)
+          ENCODE_AWS_SECRET_ACCESS_KEY=$(echo -n "${{ secrets.AWS_SECRET_ACCESS_KEY}}" | base64 -w 0)
+          ENCODE_POSTGRES_USERNAME=$(echo -n "${{ secrets.POSTGRES_USERNAME}}" | base64 -w 0)
+          ENCODE_POSTGRES_PASSWORD=$(echo -n "${{ secrets.POSTGRES_PASSWORD}}" | base64 -w 0)
+          ENCODE_JWT_SECRET=$(echo -n "${{ secrets.JWT_SECRET}}" | base64 -w 0)
+
+          sed -i "s|{temp_aws_access_key_id}|$ENCODE_AWS_ACCESS_KEY_ID|g" secret.yml
+          sed -i "s|{temp_aws_secret_access_key}|$ENCODE_AWS_SECRET_ACCESS_KEY|g" secret.yml
+          sed -i "s|{temp_postgres_username}|$ENCODE_POSTGRES_USERNAME|g" secret.yml
+          sed -i "s|{temp_postgres_password}|$ENCODE_POSTGRES_PASSWORD|g" secret.yml
+          sed -i "s|{temp_jwt_secret}|$ENCODE_JWT_SECRET|g" secret.yml
+
+          kubectl apply -f secret.yml
+
+      - name: Deploy Backend User
+        working-directory: EKSdeploy
+        run: |
+          kubectl apply -f backend-user-deploy.yml
+          kubectl get pods 
+          #kubectl apply -f backend-user-service.yml  # Only deploy at the first time
+      
+      - name: Deploy Backend Feed
+        working-directory: EKSdeploy
+        run: |
+          kubectl apply -f backend-feed-deploy.yml
+          kubectl get pods
+          #kubectl apply -f backend-feed-service.yml  # Only deploy at the first time
+
+      - name: Deploy Backend Reverse Proxy
+        working-directory: EKSdeploy
+        run: |
+          kubectl apply -f backend-reverseproxy-deploy.yml
+          kubectl get pods
+          #kubectl apply -f backend-service.yml  # Only deploy at the first time
+
+      - name: Deploy Frontend
+        working-directory: EKSdeploy
+        run: |
+          kubectl apply -f frontend-deploy.yml
+          kubectl get pods
+          #kubectl apply -f frontend-service.yml   # Only deploy at the first time
+          kubectl get svc
+
