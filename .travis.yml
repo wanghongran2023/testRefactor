@@ -1,0 +1,65 @@
+language: minimal
+
+services:
+  - docker
+
+jobs:
+  include:
+    - stage: Build and Push Images
+      script:
+        - echo "Configuring AWS CLI"
+        - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        - unzip awscliv2.zip
+        - sudo ./aws/install
+        - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+        - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+        - aws configure set region $AWS_REGION
+
+        - echo "Building Docker images"
+        - cd udagram-frontend && docker build -t drwkwxuexi/frontend . && cd ..
+        - cd udagram-reverseproxy && docker build -t drwkwxuexi/backend-reverseproxy . && cd ..
+        - cd udagram-api-feed && docker build -t drwkwxuexi/backend-feed . && cd ..
+        - cd udagram-api-user && docker build -t drwkwxuexi/backend-user . && cd ..
+
+        - echo "Pushing Docker images to DockerHub"
+        - echo "$DOCKER_PASSWORD" | docker login -u drwkwxuexi --password-stdin
+        - docker push drwkwxuexi/frontend
+        - docker push drwkwxuexi/backend-reverseproxy
+        - docker push drwkwxuexi/backend-feed
+        - docker push drwkwxuexi/backend-user
+
+    - stage: Deploy to EKS
+      script:
+        - echo "Installing dependencies..."
+        - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        - chmod +x kubectl
+        - sudo mv kubectl /usr/local/bin/
+        - kubectl version --client
+        - curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+        - sudo mv /tmp/eksctl /usr/local/bin
+        - eksctl version
+
+        - echo "Configuring AWS and connecting to EKS..."
+        - aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER_NAME
+
+        - echo "Deploying to EKS..."
+        - cd EKSdeploy
+        - kubectl apply -f configmap.yml
+        - ENCODE_AWS_ACCESS_KEY_ID=$(echo -n "$AWS_ACCESS_KEY_ID" | base64 -w 0)
+        - ENCODE_AWS_SECRET_ACCESS_KEY=$(echo -n "$AWS_SECRET_ACCESS_KEY" | base64 -w 0)
+        - ENCODE_POSTGRES_USERNAME=$(echo -n "$POSTGRES_USERNAME" | base64 -w 0)
+        - ENCODE_POSTGRES_PASSWORD=$(echo -n "$POSTGRES_PASSWORD" | base64 -w 0)
+        - ENCODE_JWT_SECRET=$(echo -n "$JWT_SECRET" | base64 -w 0)
+        - sed -i "s|{temp_aws_access_key_id}|$ENCODE_AWS_ACCESS_KEY_ID|g" secret.yml
+        - sed -i "s|{temp_aws_secret_access_key}|$ENCODE_AWS_SECRET_ACCESS_KEY|g" secret.yml
+        - sed -i "s|{temp_postgres_username}|$ENCODE_POSTGRES_USERNAME|g" secret.yml
+        - sed -i "s|{temp_postgres_password}|$ENCODE_POSTGRES_PASSWORD|g" secret.yml
+        - sed -i "s|{temp_jwt_secret}|$ENCODE_JWT_SECRET|g" secret.yml
+        - kubectl apply -f secret.yml
+        - kubectl apply -f backend-user-deploy.yml
+        - kubectl apply -f backend-feed-deploy.yml
+        - kubectl apply -f backend-reverseproxy-deploy.yml
+        - kubectl apply -f frontend-deploy.yml
+        - kubectl get pods
+        - kubectl get svc
+
