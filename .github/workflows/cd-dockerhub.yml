@@ -1,4 +1,4 @@
-name:　(DockerHub)Build and Deploy to EKS
+name: DockerHub Build and Deploy to EKS
 
 on:
   pull_request:
