@@ -20,6 +20,11 @@ RUN chmod +x /backend/set_env.sh
 COPY start.sh /backend/start.sh
 RUN chmod +x /backend/start.sh
 
-EXPOSE 8080
+RUN apt-get update && apt-get install -y less vim curl unzip sudo
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+RUN unzip awscliv2.zip
+RUN sudo ./aws/install
+
+EXPOSE 80
 
 ENTRYPOINT ["/backend/start.sh"]
