@@ -2,7 +2,7 @@ name: Build and Deploy to EKS
 
 on:
   push:
-    branches: ["main"]
+    branches: ["master"]
   workflow_dispatch:
 
 jobs:
@@ -23,8 +23,7 @@ jobs:
       - name: Build Frontend
         working-directory: udagram-frontend
         run: |
-          GIT_HASH=$(git rev-parse --short HEAD) 
-          docker build -t frontend:${GIT_HASH} .
+          docker build -t frontend .
 
       - name: Build Backend
         working-directory: udagram-api
@@ -43,8 +42,7 @@ jobs:
           echo "export JWT_SECRET=\"$JWT_SECRET\"" >> set_env.sh
           echo "export URL=\"$URL\"" >> set_env.sh
           chmod +x set_env.sh
-          GIT_HASH=$(git rev-parse --short HEAD)
-          docker build -t backend:${GIT_HASH} .
+          docker build -t backend .
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -64,15 +62,42 @@ jobs:
 
       - name: Push Frontend image
         run: |
-          GIT_HASH=$(git rev-parse --short HEAD)
-          docker tag frontend:${GIT_HASH} 823860120474.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO_FRONT }}:${GIT_HASH}
-          docker push 823860120474.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO_FRONT }}:${GIT_HASH}
+          docker tag frontend 823860120474.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO_FRONT }}:latest
+          docker push 823860120474.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO_FRONT }}:latest
 
       - name: Push Backend image
         run: |
-          GIT_HASH=$(git rev-parse --short HEAD)
-          docker tag backend:${GIT_HASH} 823860120474.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO_BACK }}:${GIT_HASH}
-          docker push 823860120474.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO_BACK }}:${GIT_HASH}
+          docker tag backend 823860120474.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO_BACK }}:latest
+          docker push 823860120474.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO_BACK }}:latest
 
+  Deploy:
+    name: Deploy ECR image to EKS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v4
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install Kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl version --client
+
+      - name: Connect to EKS
+        run: |
+          aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name mycluster
+
+      - name: Deploy Backend
+        working-directory: EKSdeploy
+        run: |
+          kubectl apply -f backend-deploy.yml
+          kubectl get pods 
 
